@@ -1,4 +1,4 @@
-// /src/components/Header.jsx
+// src/components/Header.jsx
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,12 +19,17 @@ const Header = () => {
     console.debug('[Header] useEffect triggered with user:', user, 'adminMode:', adminMode);
     if (user && !adminMode) {
       fetchNotifications();
-      const channel = supabase.channel('realtime-notifications')
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` }, payload => {
-          console.debug('[Header] New notification received:', payload.new);
-          setNotifications(prev => [payload.new, ...prev]);
-          setUnreadCount(prev => prev + (payload.new.is_read ? 0 : 1));
-        })
+      const channel = supabase
+        .channel('realtime-notifications')
+        .on(
+          'postgres_changes',
+          { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${user.id}` },
+          payload => {
+            console.debug('[Header] New notification received:', payload.new);
+            setNotifications(prev => [payload.new, ...prev]);
+            setUnreadCount(prev => prev + (payload.new.is_read ? 0 : 1));
+          }
+        )
         .subscribe();
       return () => supabase.removeChannel(channel);
     } else if (adminMode) {
@@ -60,24 +65,28 @@ const Header = () => {
 
   const navLinks = [
     { label: 'Dashboard', path: '/' },
-    ...(userRole === 'admin' ? [
-      { label: 'Driver View', path: '/driver-dashboard' },
-      { label: 'Broker View', path: '/broker-dashboard' },
-      { label: 'Payroll', path: '/payroll' },
-      { label: 'Vehicles', path: '/vehicles' },
-      { label: 'Maintenance', path: '/maintenance' },
-    ] : []),
-    { label: 'Profile', path: '/profile' }
+    ...(userRole === 'admin'
+      ? [
+          { label: 'Driver View', path: '/driver-dashboard' },
+          { label: 'Broker View', path: '/broker-dashboard' },
+          { label: 'Payroll', path: '/payroll' },
+          { label: 'Vehicles', path: '/vehicles' },
+          { label: 'Maintenance', path: '/maintenance' },
+        ]
+      : []),
+    { label: 'Profile', path: '/profile' },
   ];
 
-  const markAsRead = async (notificationId) => {
+  const markAsRead = async notificationId => {
     const { error } = await supabase
       .from('notifications')
       .update({ is_read: true })
       .eq('id', notificationId);
     if (!error) {
       console.debug('[Header] Marked notification as read:', notificationId);
-      setNotifications(prev => prev.map(n => n.id === notificationId ? { ...n, is_read: true } : n));
+      setNotifications(prev =>
+        prev.map(n => (n.id === notificationId ? { ...n, is_read: true } : n))
+      );
       setUnreadCount(prev => Math.max(0, prev - 1));
     }
   };
@@ -90,13 +99,16 @@ const Header = () => {
           <span className="text-xl font-bold hidden sm:inline">DSL Transport</span>
         </Link>
 
-        <nav className="hidden md:flex items-center gap-4">
-          {navLinks.map(link => (
-            <Button key={link.label} variant="ghost" asChild>
-              <Link to={link.path}>{link.label}</Link>
-            </Button>
-          ))}
-        </nav>
+        {/* Desktop Nav */}
+        {user && (
+          <nav className="hidden md:flex items-center gap-4">
+            {navLinks.map(link => (
+              <Button key={link.label} variant="ghost" asChild>
+                <Link to={link.path}>{link.label}</Link>
+              </Button>
+            ))}
+          </nav>
+        )}
 
         <div className="flex items-center gap-3">
           {user && (
@@ -130,7 +142,9 @@ const Header = () => {
                           onClick={() => !n.is_read && markAsRead(n.id)}
                         >
                           <p>{n.message}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{new Date(n.created_at).toLocaleString()}</p>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {new Date(n.created_at).toLocaleString()}
+                          </p>
                         </div>
                       ))
                     )}
@@ -139,10 +153,13 @@ const Header = () => {
               </AnimatePresence>
             </div>
           )}
-          <span className="text-sm text-muted-foreground hidden lg:inline">{user?.email || (adminMode ? 'admin@dsltransport.com' : '')}</span>
+          <span className="text-sm text-muted-foreground hidden lg:inline">
+            {user?.email || (adminMode ? 'admin@dsltransport.com' : '')}
+          </span>
           <Button variant="ghost" size="icon" onClick={handleLogout}>
             <LogOut className="h-5 w-5" />
           </Button>
+          {/* Mobile Menu Toggle */}
           <div className="md:hidden">
             <Button variant="ghost" size="icon" onClick={toggleMenu}>
               {isOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
@@ -151,6 +168,7 @@ const Header = () => {
         </div>
       </div>
 
+      {/* Mobile Nav Drawer */}
       <AnimatePresence>
         {isOpen && (
           <motion.div
