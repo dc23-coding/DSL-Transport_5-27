@@ -6,6 +6,8 @@ import { AuthProvider, useAuth } from '@/contexts/AuthContext';
 import Header from '@/components/Header';
 import HomeRouter from '@/components/HomeRouter';
 import Dashboard from '@/components/Dashboard';
+import DriverDashboard from '@/components/dashboards/DriverDashboard';
+import BrokerDashboard from '@/components/dashboards/BrokerDashboard';
 import FullPayrollPage from '@/components/pages/FullPayrollPage';
 import VehicleManagementPage from '@/components/pages/VehicleManagementPage';
 import MaintenancePage from '@/components/pages/MaintenancePage';
@@ -16,6 +18,8 @@ import GlobalNavControls from '@/components/GlobalNavControls';
 import RouteCalculatorPage from '@/components/pages/RouteCalculatorPage';
 import DriverManagementPage from '@/components/pages/DriverManagementPage';
 import RoleRouter from '@/components/HomeRouter'; // alias for clarity
+import Sidebar from '@/components/Sidebar';
+import FileUploadsPage from '@/components/pages/FileUploadsPage';
 
 const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user, userRole, loading } = useAuth();
@@ -94,18 +98,20 @@ function App() {
                 path="/driver-dashboard"
                 element={
                   <ProtectedRoute allowedRoles={['driver']}>
-                    <Navigate to="/" replace />
+                    <DriverDashboard />
                   </ProtectedRoute>
                 }
-              />
+/>
+
               <Route
                 path="/broker-dashboard"
                 element={
                   <ProtectedRoute allowedRoles={['broker']}>
-                    <Navigate to="/" replace />
+                    <BrokerDashboard />
                   </ProtectedRoute>
                 }
               />
+
 
               {/* auth */}
               <Route path="/login" element={<Login />} />
@@ -125,6 +131,14 @@ function App() {
                 element={
                   <ProtectedRoute allowedRoles={['admin']}>
                     <DriverManagementPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/uploads"
+                element={
+                  <ProtectedRoute>
+                    <FileUploadsPage />
                   </ProtectedRoute>
                 }
               />

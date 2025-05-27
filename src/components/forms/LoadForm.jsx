@@ -10,6 +10,7 @@ const LoadForm = ({ onClose, onSuccess }) => {
   const [origin, setOrigin] = useState('');
   const [destination, setDestination] = useState('');
   const [pickupTime, setPickupTime] = useState('');
+  const [deliveryTime, setDeliveryTime] = useState('');
   const [driverId, setDriverId] = useState('');
   const [drivers, setDrivers] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -36,7 +37,14 @@ const LoadForm = ({ onClose, onSuccess }) => {
     try {
       const { error } = await supabase
         .from('loads')
-        .insert([{ origin, destination, pickup_time: pickupTime, driver_id: driverId, status: 'Scheduled' }]);
+        .insert([{ 
+          origin,
+          destination,
+          pickup_time: pickupTime,
+          delivery_time: deliveryTime,
+          driver_id: driverId,
+          status: 'Scheduled'
+        }]);
 
       if (error) throw error;
 
@@ -93,6 +101,17 @@ const LoadForm = ({ onClose, onSuccess }) => {
               type="datetime-local"
               value={pickupTime}
               onChange={(e) => setPickupTime(e.target.value)}
+              className="w-full px-3 py-2 rounded-md border bg-background"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium mb-1">Delivery Time</label>
+            <input
+              type="datetime-local"
+              value={deliveryTime}
+              onChange={(e) => setDeliveryTime(e.target.value)}
               className="w-full px-3 py-2 rounded-md border bg-background"
               required
             />

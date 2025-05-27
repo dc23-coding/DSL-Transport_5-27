@@ -12,11 +12,9 @@ import DriverForm from '@/components/forms/DriverForm';
 import DispatchingColumn from '@/components/columns/DispatchingColumn';
 import LogisticsColumn from '@/components/columns/LogisticsColumn';
 import PayrollColumn from '@/components/columns/PayrollColumn';
-import { useNavigate } from 'react-router-dom';
 
 
 const Dashboard = () => {
-  const navigate = useNavigate();
   const [activeColumns, setActiveColumns] = useState([]);
   const [showLoadForm, setShowLoadForm] = useState(false);
   const [showShipmentForm, setShowShipmentForm] = useState(false);
@@ -117,13 +115,6 @@ const Dashboard = () => {
         <Button onClick={() => setShowDriverForm(true)} className="flex-grow sm:flex-grow-0"><Users className="mr-2 h-4 w-4" /> Add Driver</Button>
       </motion.div>
 
-      {/* ✅ Newly Added Navigation Buttons */}
-      <div className="flex flex-wrap gap-2 mb-4">
-        <Button onClick={() => navigate('/vehicles')}>Manage Vehicles</Button>
-        <Button onClick={() => navigate('/maintenance')}>Manage Maintenance</Button>
-        <Button onClick={() => navigate('/profile')}>View Profile</Button>
-      </div>
-
       <motion.div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5, delay: 0.2 }}>
         {statsData.map((stat, index) => (
           <motion.div
@@ -149,7 +140,6 @@ const Dashboard = () => {
         ))}
       </motion.div>
 
-      {/* ✅ Dashboard Columns */}  
       <div className="flex flex-col lg:flex-row gap-4">
         {activeColumns.includes('dispatching') && (
           <motion.div className="flex-1 min-w-0 lg:max-w-[calc(100%/3-1rem)]" initial={{ opacity: 0, x: -50 }} animate={{ opacity: 1, x: 0 }} transition={{ duration: 0.5, delay: 0.3 }}>
@@ -168,7 +158,6 @@ const Dashboard = () => {
         )}
       </div>
 
-      {/* ✅ Form Modals */}  
       <AnimatePresence>
         {showLoadForm && <LoadForm onClose={() => setShowLoadForm(false)} onSuccess={() => { handleSuccess('Load'); setShowLoadForm(false); }} />}
         {showShipmentForm && <ShipmentForm onClose={() => setShowShipmentForm(false)} onSuccess={() => { handleSuccess('Shipment'); setShowShipmentForm(false); }} />}

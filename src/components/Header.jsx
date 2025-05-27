@@ -95,7 +95,7 @@ const Header = () => {
     <header className="glass-effect sticky top-0 z-40 shadow-md" style={{ '--header-height': '4rem' }}>
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <Link to="/" className="flex items-center gap-2">
-          <img src="/dsl-logo-wht.png" alt="DSL Transport Logo" className="h-8 w-auto" />
+          <img src="/7.png" alt="DSL Transport Logo" className="h-8 w-auto" />
           <span className="text-xl font-bold hidden sm:inline">DSL Transport</span>
         </Link>
 
