@@ -1,152 +1,132 @@
 // src/App.jsx
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from '@/components/ui/toaster';
-import { AuthProvider, useAuth } from '@/contexts/AuthContext';
-import Header from '@/components/Header';
-import HomeRouter from '@/components/HomeRouter';
-import Dashboard from '@/components/Dashboard';
-import DriverDashboard from '@/components/dashboards/DriverDashboard';
-import BrokerDashboard from '@/components/dashboards/BrokerDashboard';
-import FullPayrollPage from '@/components/pages/FullPayrollPage';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from '@/contexts/AuthContext';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import HomeRouter from '@/components/auth/HomeRouter';
+import Login from '@/components/auth/Login';
+import Register from '@/components/auth/Register';
+import Dashboard from '@/components/pages/Dashboard';
+import AdminDashboard from '@/components/pages/AdminDashboard';
+import BrokerDashboard from '@/components/pages/BrokerDashboard';
+import DriverDashboard from '@/components/pages/DriverDashboard';
 import VehicleManagementPage from '@/components/pages/VehicleManagementPage';
 import MaintenancePage from '@/components/pages/MaintenancePage';
 import UserProfilePage from '@/components/pages/UserProfilePage';
-import Login from '@/components/auth/Login';
-import Register from '@/components/auth/Register';
-import GlobalNavControls from '@/components/GlobalNavControls';
+import FullPayrollPage from '@/components/pages/FullPayrollPage';
 import RouteCalculatorPage from '@/components/pages/RouteCalculatorPage';
-import DriverManagementPage from '@/components/pages/DriverManagementPage';
-import RoleRouter from '@/components/HomeRouter'; // alias for clarity
-import Sidebar from '@/components/Sidebar';
-import FileUploadsPage from '@/components/pages/FileUploadsPage';
-
-const ProtectedRoute = ({ children, allowedRoles }) => {
-  const { user, userRole, loading } = useAuth();
-  if (loading) return <div>Loading...</div>;
-  if (!user) return <Navigate to="/login" />;
-  if (allowedRoles && !allowedRoles.includes(userRole) && userRole !== 'admin') {
-    return <Navigate to="/" />;
-  }
-  return children;
-};
+import GlobalNavControls from '@/components/GlobalNavControls';
 
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen bg-background text-foreground flex flex-col">
-          <Header />
-          <main className="flex-1 container mx-auto px-4 py-6">
-            <Routes>
-              {/* role-based landing at "/" */}
-              <Route
-                path="/"
-                element={
-                  <ProtectedRoute>
-                    <HomeRouter />
-                  </ProtectedRoute>
-                }
-              />
+        <GlobalNavControls />
+        <Routes>
+          {/* Public routes */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/register" element={<Register />} />
 
-              {/* Admin workspace */}
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <Dashboard />
-                  </ProtectedRoute>
-                }
-              />
+          {/* Root: redirect by role */}
+          <Route
+            path="/"
+            element={
+              <ProtectedRoute>
+                <HomeRouter />
+              </ProtectedRoute>
+            }
+          />
 
-              {/* admin-only pages */}
-              <Route
-                path="/payroll"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <FullPayrollPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/vehicles"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <VehicleManagementPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/maintenance"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <MaintenancePage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/profile"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <UserProfilePage />
-                  </ProtectedRoute>
-                }
-              />
+          {/* Admin-only pages */}
+          <Route
+            path="/admin-dashboard"
+            element={
+              <ProtectedRoute allowedRoles={[ 'admin' ]}>
+                <AdminDashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/dashboard"
+            element={
+              <ProtectedRoute allowedRoles={[ 'admin' ]}>
+                <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/vehicles"
+            element={
+              <ProtectedRoute allowedRoles={[ 'admin' ]}>
+                <VehicleManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/maintenance"
+            element={
+              <ProtectedRoute allowedRoles={[ 'admin' ]}>
+                <MaintenancePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/payroll"
+            element={
+              <ProtectedRoute allowedRoles={[ 'admin' ]}>
+                <FullPayrollPage />
+              </ProtectedRoute>
+            }
+          />
 
-              {/* broker & driver dashboards (optional direct routes) */}
-              <Route
-                path="/driver-dashboard"
-                element={
-                  <ProtectedRoute allowedRoles={['driver']}>
-                    <DriverDashboard />
-                  </ProtectedRoute>
-                }
-/>
+          {/* Broker-only page */}
+          <Route
+            path="/broker-dashboard"
+            element={
+              <ProtectedRoute allowedRoles={[ 'broker' ]}>
+                <BrokerDashboard />
+              </ProtectedRoute>
+            }
+          />
 
-              <Route
-                path="/broker-dashboard"
-                element={
-                  <ProtectedRoute allowedRoles={['broker']}>
-                    <BrokerDashboard />
-                  </ProtectedRoute>
-                }
-              />
+          {/* Driver-only page */}
+          <Route
+            path="/driver-dashboard"
+            element={
+              <ProtectedRoute allowedRoles={[ 'driver' ]}>
+                <DriverDashboard />
+              </ProtectedRoute>
+            }
+          />
 
+          {/* Shared pages */}
+          <Route
+            path="/profile"
+            element={
+              <ProtectedRoute>
+                <UserProfilePage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/route-calculator"
+            element={
+              <ProtectedRoute>
+                <RouteCalculatorPage />
+              </ProtectedRoute>
+            }
+          />
 
-              {/* auth */}
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-
-              {/* protected tools */}
-              <Route
-                path="/route-calculator"
-                element={
-                  <ProtectedRoute>
-                    <RouteCalculatorPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/driver-management"
-                element={
-                  <ProtectedRoute allowedRoles={['admin']}>
-                    <DriverManagementPage />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/uploads"
-                element={
-                  <ProtectedRoute>
-                    <FileUploadsPage />
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
-          </main>
-          <Toaster />
-          <GlobalNavControls />
-        </div>
+          {/* Fallback */}
+          <Route
+            path="*"
+            element={
+              <ProtectedRoute>
+                <HomeRouter />
+              </ProtectedRoute>
+            }
+          />
+        </Routes>
       </Router>
     </AuthProvider>
   );
