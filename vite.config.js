@@ -6,7 +6,12 @@ export default defineConfig({
   plugins: [react()],
   server: {
     cors: true,
+    port: 5175,
     historyApiFallback: true, // ✅ Enables SPA fallback for refresh on routes
+    hmr: {
+      protocol: 'ws',
+      host: 'localhost',
+    },
     headers: {
       'Cross-Origin-Embedder-Policy': 'credentialless',
     },

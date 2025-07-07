@@ -1,31 +1,33 @@
-// src/components/auth/HomeRouter.jsx
+// ✅ HomeRouter.jsx
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
 const HomeRouter = () => {
   const navigate = useNavigate();
-  const { user, userRole } = useAuth();
+  const { user, devBypass } = useAuth();
+  const userRole = user?.user_metadata?.role;
 
   useEffect(() => {
-    if (user) {
-      switch (userRole) {
-        case 'admin':
-          navigate('/admin-dashboard');
-          break;
-        case 'broker':
-          navigate('/broker-dashboard');
-          break;
-        case 'driver':
-          navigate('/driver-dashboard');
-          break;
-        default:
-          navigate('/login');
-      }
-    } else {
-      navigate('/login');
+    if (devBypass) {
+      console.warn('🚧 Dev bypass active');
+      navigate('/admin-dashboard');
+      return;
     }
-  }, [user, userRole, navigate]);
+
+    if (!user) return navigate('/login');
+
+    console.log('🧠 USER:', user);
+    console.log('🧠 USER ROLE:', user?.user_metadata?.role);
+
+
+    switch (userRole) {
+      case 'admin': return navigate('/admin-dashboard');
+      case 'driver': return navigate('/driver-dashboard');
+      case 'broker': return navigate('/broker-dashboard');
+      default: return navigate('/');
+    }
+  }, [user, userRole, devBypass, navigate]);
 
   return null;
 };
