@@ -44,14 +44,16 @@ const BrokerDashboard = () => {
   }, [user.id]);
 
   // Example revenue data for the chart
-  const revenueData = [
+  const revenueData = import.meta.env.VITE_USE_MOCK_DATA === 'true' ? [
     { month: 'Jan', revenue: 45000 },
     { month: 'Feb', revenue: 52000 },
     { month: 'Mar', revenue: 48000 },
     { month: 'Apr', revenue: 61000 },
     { month: 'May', revenue: 55000 },
     { month: 'Jun', revenue: 67000 }
-  ];
+  ]: [];
+const totalRevenue = shipmentsData ? shipmentsData.reduce((sum, shipment) => sum + (shipment.revenue || 0), 0) : 0;
+const monthlyGrowth = shipmentsData ? calculateGrowth(shipmentsData) : 0;
 
   return (
     <div className="space-y-6">

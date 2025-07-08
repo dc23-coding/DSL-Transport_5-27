@@ -22,6 +22,34 @@ const DriverDashboardContent = ({
   const driverNameToDisplay = driverDetails?.full_name || (user?.email ? user.email.split('@')[0] : 'Driver');
   const welcomeMessage = adminMode && driverDetails ? `Viewing data for ${driverDetails.full_name}` : `Welcome back, ${driverNameToDisplay}!`;
 
+  const mockLoads = import.meta.env.VITE_USE_MOCK_DATA === 'true' ? [
+  { id: '1', driver_id: user?.id || 'mock-id', status: 'Scheduled', pickup_time: '2025-07-07T10:00:00Z', origin: 'New York', destination: 'Chicago', delivery_time: '2025-07-08T10:00:00Z' }
+] : [];
+const mockPayments = import.meta.env.VITE_USE_MOCK_DATA === 'true' ? [
+  { id: '1', driver_id: user?.id || 'mock-id', amount: 500, payment_date: '2025-07-06', period_start: '2025-07-01', period_end: '2025-07-06', status: 'Paid' }
+] : [];
+
+const fetchDriverData = useCallback(async () => {
+  setLoadingData(true);
+  if (!supabase?.auth) {
+    setDriverDetails({
+      full_name: adminMode ? 'Admin (Test View - No DB)' : (user?.email?.split('@')[0] || 'Driver (No DB)'),
+      email: adminMode ? 'admin@example.com' : user?.email
+    });
+    setLoads(mockLoads);
+    setPayments(mockPayments);
+    setStats({
+      completedLoads: mockLoads.filter(l => l.status === 'Completed').length,
+      totalEarnings: mockPayments.reduce((sum, p) => sum + Number(p.amount), 0),
+      upcomingLoads: mockLoads.filter(l => ['Scheduled', 'Picked Up', 'In Transit', 'At Delivery'].includes(l.status)).length,
+      complianceAlerts: []
+    });
+    setLoadingData(false);
+    return;
+  }
+  // Rest of the fetchDriverData function
+}, [user, adminMode, toast]);
+
   return (
     <div className="space-y-6 pb-8">
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5 }}>

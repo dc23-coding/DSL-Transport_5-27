@@ -7,15 +7,11 @@ export default defineConfig({
   server: {
     cors: true,
     port: 5175,
-    historyApiFallback: true, // ✅ Enables SPA fallback for refresh on routes
+    historyApiFallback: true, // SPA fallback (mainly for local dev)
     hmr: {
       protocol: 'ws',
       host: 'localhost',
     },
-    headers: {
-      'Cross-Origin-Embedder-Policy': 'credentialless',
-    },
-    allowedHosts: true,
   },
   resolve: {
     extensions: ['.jsx', '.js', '.tsx', '.ts', '.json'],
