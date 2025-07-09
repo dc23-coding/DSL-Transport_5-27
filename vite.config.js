@@ -5,44 +5,39 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   build: {
+    chunkSizeWarningLimit: 1500, // Increased from default 500kb
     rollupOptions: {
       output: {
         manualChunks(id) {
+          // Custom chunk splitting strategy
           if (id.includes('node_modules')) {
-            if (id.includes('@supabase/supabase-js')) {
-              return 'supabase';
-            }
             if (id.includes('react')) {
-              return 'react';
+              return 'vendor-react';
+            }
+            if (id.includes('supabase')) {
+              return 'vendor-supabase';
             }
             if (id.includes('html2canvas')) {
-              return 'html2canvas';
+              return 'vendor-html2canvas';
             }
-            // Add more as needed
-            return 'vendor'; // everything else from node_modules
+            return 'vendor'; // Other dependencies
           }
         }
       }
-    },
-    sourcemap: process.env.NODE_ENV !== 'production',
+    }
   },
   server: {
-    port: 5175,
     cors: true,
+    port: 5175,
     hmr: {
       protocol: 'ws',
       host: 'localhost',
     },
-  },
-  preview: {
-    port: 5175,
-    cors: true,
   },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
     extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
-  },
-  base: '/',
+  }
 });
