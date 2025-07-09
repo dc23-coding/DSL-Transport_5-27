@@ -1,4 +1,3 @@
-// ✅ HomeRouter.jsx
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -9,25 +8,42 @@ const HomeRouter = () => {
   const userRole = user?.user_metadata?.role;
 
   useEffect(() => {
+    // ⚠️ If dev bypass is active, always go to admin dashboard
     if (devBypass) {
       console.warn('🚧 Dev bypass active');
-      navigate('/admin-dashboard');
+      navigate('/admin-dashboard', { replace: true });
       return;
     }
 
-    if (!user) return navigate('/login');
+    // 🚫 If user is not logged in, send to login
+    if (user === null) {
+      navigate('/login', { replace: true });
+      return;
+    }
 
-    console.log('🧠 USER:', user);
-    console.log('🧠 USER ROLE:', user?.user_metadata?.role);
+    // ✅ Once user is available, redirect based on role
+    if (user) {
+      console.log('🧠 USER:', user);
+      console.log('🧠 USER ROLE:', userRole);
 
-
-    switch (userRole) {
-      case 'admin': return navigate('/admin-dashboard');
-      case 'driver': return navigate('/driver-dashboard');
-      case 'broker': return navigate('/broker-dashboard');
-      default: return navigate('/');
+      switch (userRole) {
+        case 'admin':
+          navigate('/admin-dashboard', { replace: true });
+          break;
+        case 'driver':
+          navigate('/driver-dashboard', { replace: true });
+          break;
+        case 'broker':
+          navigate('/broker-dashboard', { replace: true });
+          break;
+        default:
+          navigate('/', { replace: true }); // fallback
+      }
     }
   }, [user, userRole, devBypass, navigate]);
+
+  // ⏳ Wait if user state hasn't been determined yet
+  if (user === undefined) return <div>Loading...</div>;
 
   return null;
 };
