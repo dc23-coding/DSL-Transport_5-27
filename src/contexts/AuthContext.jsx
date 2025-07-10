@@ -1,10 +1,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
-import { createClient } from '@supabase/supabase-js';
-
 
 const AuthContext = createContext();
+const VALID_ROLES = new Set(['admin', 'driver', 'broker']);
 
 export const useAuth = () => useContext(AuthContext);
 
@@ -15,12 +14,21 @@ export const AuthProvider = ({ children }) => {
   const [devBypass, setDevBypass] = useState(false);
   const { toast } = useToast();
 
-  // ✅ Handle session and role extraction
+  // ✅ Secure session and role extraction
   useEffect(() => {
     const updateUser = (session) => {
       const user = session?.user ?? null;
       setUser(user);
-      setUserRole(user?.user_metadata?.role ?? null);
+      
+      // Check both possible role locations
+      const role = user?.app_metadata?.role || user?.user_metadata?.role;
+      
+      if (role && !VALID_ROLES.has(role)) {
+        console.error('Invalid role detected:', role);
+        setUserRole(null);
+      } else {
+        setUserRole(role ?? null);
+      }
     };
 
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
@@ -42,25 +50,37 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
 
     if (error) {
-      toast({ title: 'Login Failed', description: error.message, variant: 'destructive' });
+      toast({ 
+        title: 'Login Failed', 
+        description: error.message, 
+        variant: 'destructive' 
+      });
+      return { error };
     }
 
-    return { user: data?.user, error };
+    return { user: data?.user };
   };
 
-  // ✅ Register and insert into role table
+  // ✅ Secure registration with role validation
   const register = async (email, password, role, fullName) => {
     setLoading(true);
 
+    // Validate role first
+    if (!VALID_ROLES.has(role)) {
+      setLoading(false);
+      throw new Error(`Invalid role: ${role}`);
+    }
+
+    // Sign up with separated metadata
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
         data: {
-          role,
           full_name: fullName || email.split('@')[0]
         }
-      }
+      },
+      app_metadata: { role } // Store role more securely
     });
 
     if (error) {
@@ -83,18 +103,23 @@ export const AuthProvider = ({ children }) => {
       return {};
     }
 
+    // Insert into appropriate table
     const baseData = {
       id: user.id,
       email,
       name: fullName || email.split('@')[0]
     };
 
-    if (role === 'admin') {
-      await supabase.from('admins').insert(baseData);
-    } else if (role === 'driver') {
-      await supabase.from('drivers').insert({ ...baseData, status: 'active' });
-    } else if (role === 'broker') {
-      await supabase.from('brokers').insert(baseData);
+    try {
+      if (role === 'admin') {
+        await supabase.from('admins').insert(baseData);
+      } else if (role === 'driver') {
+        await supabase.from('drivers').insert({ ...baseData, status: 'active' });
+      } else if (role === 'broker') {
+        await supabase.from('brokers').insert(baseData);
+      }
+    } catch (err) {
+      console.error('Failed to insert role data:', err);
     }
 
     toast({
@@ -114,15 +139,21 @@ export const AuthProvider = ({ children }) => {
     setDevBypass(false);
   };
 
-  // ✅ Dev bypass (simulate admin)
+  // ✅ Improved dev bypass
   const activateBypass = () => {
     setDevBypass(true);
     const fakeUser = {
+      id: 'bypass-dev-user',
       email: 'dev@dsl.dev',
-      user_metadata: { role: 'admin' }
+      app_metadata: { role: 'admin' },
+      user_metadata: { full_name: 'Developer' }
     };
     setUser(fakeUser);
     setUserRole('admin');
+    toast({
+      title: "Developer Mode Activated",
+      description: "You now have admin privileges",
+    });
   };
 
   return (
@@ -134,7 +165,10 @@ export const AuthProvider = ({ children }) => {
       register,
       logout,
       devBypass,
-      activateBypass
+      activateBypass,
+      isAdmin: userRole === 'admin' || devBypass,
+      isDriver: userRole === 'driver',
+      isBroker: userRole === 'broker'
     }}>
       {children}
     </AuthContext.Provider>

@@ -1,45 +1,36 @@
 import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import path from 'path';
-import { visualizer } from 'rollup-plugin-visualizer';
+   import react from '@vitejs/plugin-react';
+   import path from 'path';
 
-export default defineConfig({
-  base: '/',
-  plugins: [
-    react({
-      jsxRuntime: 'classic'
-    }),
-    visualizer()
-  ],
-  build: {
-    outDir: 'dist',
-    emptyOutDir: true,
-    chunkSizeWarningLimit: 1500,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('react')) return 'vendor-react';
-            if (id.includes('supabase')) return 'vendor-supabase';
-            if (id.includes('html2canvas')) return 'vendor-html2canvas';
-            return 'vendor';
-          }
-        }
-      }
-    }
-  },
-  server: {
-    port: 5175,
-    cors: true,
-    hmr: {
-      protocol: 'ws',
-      host: 'localhost'
-    }
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src')
-    },
-    extensions: ['.js', '.jsx', '.ts', '.tsx', '.json']
-  }
-});
+   export default defineConfig({
+     base: '/',
+     plugins: [
+       react({
+         jsxRuntime: 'automatic'
+       })
+     ],
+     build: {
+       outDir: 'dist',
+       emptyOutDir: true,
+       sourcemap: true,
+       rollupOptions: {
+         output: {
+           manualChunks(id) {
+             if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
+               return 'vendor-react';
+             }
+             if (id.includes('node_modules')) {
+               return 'vendor';
+             }
+           }
+         }
+       }
+     },
+     resolve: {
+       alias: {
+         '@': path.resolve(__dirname, './src'),
+         'react': path.resolve(__dirname, './node_modules/react'),
+         'react-dom': path.resolve(__dirname, './node_modules/react-dom')
+       }
+     }
+   });

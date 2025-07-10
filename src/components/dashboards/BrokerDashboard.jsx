@@ -16,6 +16,14 @@ const BrokerDashboard = () => {
     totalRevenue: 0,
     monthlyGrowth: 0
   });
+  
+  const calculateGrowth = (data) => {
+  // Simple placeholder logic
+  if (!data || data.length < 2) return 0;
+  const last = data[0]?.revenue || 0;
+  const prev = data[1]?.revenue || 1;
+  return Math.round(((last - prev) / prev) * 100);
+};
 
   useEffect(() => {
     const fetchBrokerData = async () => {
@@ -52,8 +60,6 @@ const BrokerDashboard = () => {
     { month: 'May', revenue: 55000 },
     { month: 'Jun', revenue: 67000 }
   ]: [];
-const totalRevenue = shipmentsData ? shipmentsData.reduce((sum, shipment) => sum + (shipment.revenue || 0), 0) : 0;
-const monthlyGrowth = shipmentsData ? calculateGrowth(shipmentsData) : 0;
 
   return (
     <div className="space-y-6">
