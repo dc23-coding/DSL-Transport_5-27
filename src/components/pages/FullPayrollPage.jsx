@@ -1,14 +1,17 @@
-// src/pages/FullPayrollPage.jsx
-import React, { useState, useEffect, useCallback } from 'react';
-import { motion } from 'framer-motion';
-import { Download, Search, Calendar, Edit } from 'lucide-react';
+import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
+import DownloadIcon from 'lucide-react/dist/esm/icons/download';
+import SearchIcon from 'lucide-react/dist/esm/icons/search';
+import CalendarIcon from 'lucide-react/dist/esm/icons/calendar';
+import EditIcon from 'lucide-react/dist/esm/icons/edit';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
-import jsPDF from 'jspdf';
-import 'jspdf-autotable';
 import { useToast } from '@/components/ui/use-toast';
 import Pagination from '@/components/ui/pagination';
 import PayrollForm from '@/components/forms/PayrollForm';
+
+// Lazy-load heavy dependencies
+const jsPDF = lazy(() => import('jspdf'));
+const autoTable = lazy(() => import('jspdf-autotable'));
 
 const FullPayrollPage = () => {
   const [payrollData, setPayrollData] = useState([]);
@@ -19,7 +22,7 @@ const FullPayrollPage = () => {
       .split('T')[0],
     end: new Date(new Date().getFullYear(), new Date().getMonth() + 1, 0)
       .toISOString()
-      .split('T')[0]
+      .split('T')[0],
   });
   const [searchTerm, setSearchTerm] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -34,13 +37,11 @@ const FullPayrollPage = () => {
     const rangeStart = (currentPage - 1) * itemsPerPage;
     const rangeEnd = rangeStart + itemsPerPage - 1;
 
-    // Try embedded join first
     let query = supabase
       .from('payroll')
-      .select(
-        'id, amount, period_start, period_end, payment_date, status, drivers(full_name)',
-        { count: 'exact' }
-      )
+      .select('id, amount, period_start, period_end, payment_date, status, drivers(full_name)', {
+        count: 'exact',
+      })
       .gte('payment_date', dateRange.start)
       .lte('payment_date', dateRange.end);
 
@@ -54,14 +55,12 @@ const FullPayrollPage = () => {
         .range(rangeStart, rangeEnd);
 
       if (error) {
-        // Fallback if no foreign-key relationship
         if (error.code === 'PGRST200') {
           const { data: rawData, error: rawError, count: rawCount } = await supabase
             .from('payroll')
-            .select(
-              'id, amount, period_start, period_end, payment_date, status, driver_id',
-              { count: 'exact' }
-            )
+            .select('id, amount, period_start, period_end, payment_date, status, driver_id', {
+              count: 'exact',
+            })
             .gte('payment_date', dateRange.start)
             .lte('payment_date', dateRange.end)
             .order('payment_date', { ascending: false })
@@ -71,13 +70,12 @@ const FullPayrollPage = () => {
             toast({
               title: 'Error fetching payroll data',
               description: rawError.message,
-              variant: 'destructive'
+              variant: 'destructive',
             });
             setPayrollData([]);
             setTotalItems(0);
           } else {
-            // Batch fetch driver names
-            const driverIds = [...new Set(rawData.map(p => p.driver_id))];
+            const driverIds = [...new Set(rawData.map((p) => p.driver_id))];
             const { data: driversList } = await supabase
               .from('drivers')
               .select('id, full_name')
@@ -86,9 +84,9 @@ const FullPayrollPage = () => {
               acc[d.id] = d.full_name;
               return acc;
             }, {});
-            const merged = rawData.map(p => ({
+            const merged = rawData.map((p) => ({
               ...p,
-              drivers: { full_name: driverMap[p.driver_id] || 'N/A' }
+              drivers: { full_name: driverMap[p.driver_id] || 'N/A' },
             }));
             setPayrollData(merged);
             setTotalItems(rawCount || 0);
@@ -96,13 +94,11 @@ const FullPayrollPage = () => {
           return;
         }
 
-        if (error.code !== '42P01') {
-          toast({
-            title: 'Error fetching payroll data',
-            description: error.message,
-            variant: 'destructive'
-          });
-        }
+        toast({
+          title: 'Error fetching payroll data',
+          description: error.message,
+          variant: 'destructive',
+        });
         setPayrollData([]);
         setTotalItems(0);
       } else {
@@ -113,7 +109,7 @@ const FullPayrollPage = () => {
       toast({
         title: 'Client-side error fetching payroll data',
         description: e.message,
-        variant: 'destructive'
+        variant: 'destructive',
       });
       setPayrollData([]);
       setTotalItems(0);
@@ -126,39 +122,62 @@ const FullPayrollPage = () => {
     fetchPayrollData();
   }, [fetchPayrollData]);
 
-  const exportToPDF = () => {
-    const doc = new jsPDF();
-    doc.text('Payroll Report', 14, 16);
-    doc.autoTable({
-      startY: 20,
-      head: [['Driver', 'Period', 'Amount ($)', 'Status', 'Payment Date']],
-      body: payrollData.map(p => [
-        p.drivers?.full_name || 'N/A',
-        `${new Date(p.period_start).toLocaleDateString()} - ${new Date(
-          p.period_end
-        ).toLocaleDateString()}`,
-        Number(p.amount).toFixed(2),
-        p.status,
-        new Date(p.payment_date).toLocaleDateString()
-      ])
-    });
-    doc.save('payroll-report.pdf');
+  const exportToPDF = async () => {
+    try {
+      const doc = new jsPDF();
+      doc.text('Payroll Report', 14, 16);
+      doc.autoTable({
+        startY: 20,
+        head: [['Driver', 'Period', 'Amount ($)', 'Status', 'Payment Date']],
+        body: payrollData.map((p) => [
+          p.drivers?.full_name || 'N/A',
+          `${new Date(p.period_start).toLocaleDateString()} - ${new Date(
+            p.period_end
+          ).toLocaleDateString()}`,
+          Number(p.amount).toFixed(2),
+          p.status,
+          new Date(p.payment_date).toLocaleDateString(),
+        ]),
+      });
+      doc.save('payroll-report.pdf');
+    } catch (e) {
+      toast({
+        title: 'Error generating PDF',
+        description: e.message,
+        variant: 'destructive',
+      });
+    }
   };
 
   const exportToCSV = () => {
-    const headers = ['Driver', 'Period Start', 'Period End', 'Amount', 'Status', 'Payment Date'];
-    const csvContent = [
-      headers.join(','),
-      ...payrollData.map(p =>
-        [`"${p.drivers?.full_name || 'N/A'}"`, p.period_start, p.period_end, p.amount, p.status, p.payment_date].join(',')
-      )
-    ].join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = 'payroll-report.csv';
-    link.click();
-    URL.revokeObjectURL(link.href);
+    try {
+      const headers = ['Driver', 'Period Start', 'Period End', 'Amount', 'Status', 'Payment Date'];
+      const csvContent = [
+        headers.join(','),
+        ...payrollData.map((p) =>
+          [
+            `"${p.drivers?.full_name || 'N/A'}"`,
+            p.period_start,
+            p.period_end,
+            p.amount,
+            p.status,
+            p.payment_date,
+          ].join(',')
+        ),
+      ].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.download = 'payroll-report.csv';
+      link.click();
+      URL.revokeObjectURL(link.href);
+    } catch (e) {
+      toast({
+        title: 'Error generating CSV',
+        description: e.message,
+        variant: 'destructive',
+      });
+    }
   };
 
   const handleFormSuccess = () => {
@@ -167,7 +186,7 @@ const FullPayrollPage = () => {
     fetchPayrollData();
   };
 
-  const handleEditPayment = payment => {
+  const handleEditPayment = (payment) => {
     setEditingPayment(payment);
     setShowPayrollForm(true);
   };
@@ -176,55 +195,62 @@ const FullPayrollPage = () => {
 
   return (
     <div className="space-y-6 pb-8">
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="flex flex-col sm:flex-row justify-between items-center gap-4"
-      >
+      <div className="flex flex-col sm:flex-row justify-between items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold">Full Payroll Overview</h1>
           <p className="text-muted-foreground mt-1">Manage and track all payroll activities.</p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <Button onClick={() => { setEditingPayment(null); setShowPayrollForm(true); }} className="w-full sm:w-auto">
+          <Button
+            onClick={() => {
+              setEditingPayment(null);
+              setShowPayrollForm(true);
+            }}
+            className="w-full sm:w-auto"
+          >
             Create Payment
           </Button>
           <Button onClick={exportToCSV} variant="outline" className="gap-2 w-full sm:w-auto">
-            <Download className="h-4 w-4" /> Export CSV
+            <DownloadIcon className="h-4 w-4" /> Export CSV
           </Button>
-          <Button onClick={exportToPDF} variant="outline" className="gap-2 w-full sm:w-auto">
-            <Download className="h-4 w-4" /> Export PDF
-          </Button>
+          <Suspense fallback={<Button disabled>Loading...</Button>}>
+            <Button onClick={exportToPDF} variant="outline" className="gap-2 w-full sm:w-auto">
+              <DownloadIcon className="h-4 w-4" /> Export PDF
+            </Button>
+          </Suspense>
         </div>
-      </motion.div>
+      </div>
 
       <div className="glass-effect p-4 rounded-lg shadow-md">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
           <div className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-muted-foreground" />
+            <CalendarIcon className="h-5 w-5 text-muted-foreground" />
             <input
               type="date"
               value={dateRange.start}
-              onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+              onChange={(e) => setDateRange((prev) => ({ ...prev, start: e.target.value }))}
               className="w-full px-3 py-2 rounded-md border bg-background focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
           <div className="flex items-center gap-2">
-            <Calendar className="h-5 w-5 text-muted-foreground" />
+            <CalendarIcon className="h-5 w-5 text-muted-foreground" />
             <input
               type="date"
               value={dateRange.end}
-              onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+              onChange={(e) => setDateRange((prev) => ({ ...prev, end: e.target.value }))}
               className="w-full px-3 py-2 rounded-md border bg-background focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
           <div className="flex items-center gap-2">
-            <Search className="h-5 w-5 text-muted-foreground" />
+            <SearchIcon className="h-5 w-5 text-muted-foreground" />
             <input
               type="text"
               placeholder="Search by driver name..."
               value={searchTerm}
-              onChange={e => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+              onChange={(e) => {
+                setSearchTerm(e.target.value);
+                setCurrentPage(1);
+              }}
               className="w-full px-3 py-2 rounded-md border bg-background focus:outline-none focus:ring-1 focus:ring-primary"
             />
           </div>
@@ -251,12 +277,9 @@ const FullPayrollPage = () => {
                 </tr>
               </thead>
               <tbody>
-                {payrollData.map((payment, idx) => (
-                  <motion.tr
+                {payrollData.map((payment) => (
+                  <tr
                     key={payment.id}
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: idx * 0.05 }}
                     className="border-b border-border/50 hover:bg-muted/20"
                   >
                     <td className="py-3 px-2">{payment.drivers.full_name}</td>
@@ -292,10 +315,10 @@ const FullPayrollPage = () => {
                         className="h-8 w-8"
                         onClick={() => handleEditPayment(payment)}
                       >
-                        <Edit className="h-4 w-4" />
+                        <EditIcon className="h-4 w-4" />
                       </Button>
                     </td>
-                  </motion.tr>
+                  </tr>
                 ))}
               </tbody>
             </table>
@@ -308,7 +331,7 @@ const FullPayrollPage = () => {
           onPageChange={setCurrentPage}
           itemsPerPage={itemsPerPage}
           totalItems={totalItems}
-          onItemsPerPageChange={val => {
+          onItemsPerPageChange={(val) => {
             setItemsPerPage(val);
             setCurrentPage(1);
           }}

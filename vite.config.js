@@ -15,21 +15,20 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'), // Map @/ to src/
+      '@': path.resolve(__dirname, './src'), // Ensure @/ maps to src/
     },
   },
   build: {
     rollupOptions: {
       output: {
         manualChunks: {
-          // Vendor dependencies
           'vendor-supabase': ['@supabase/supabase-js'],
           'vendor-lucide': ['lucide-react'],
           'vendor-react-router': ['react-router-dom'],
-          'vendor-react': ['react', 'react-dom'],
+          'vendor-react': ['react', 'react-dom'], // Ensure React is bundled
           'vendor-recharts': ['recharts'],
           'vendor-framer-motion': ['framer-motion'],
-          'vendor-jspdf': ['jspdf', 'jspdf-autotable'],
+          'vendor-jspdf': ['jspdf', 'jspdf-autotable', 'html2canvas'],
           'vendor-radix': [
             '@radix-ui/react-alert-dialog',
             '@radix-ui/react-avatar',
@@ -42,7 +41,6 @@ export default defineConfig({
             '@radix-ui/react-tabs',
             '@radix-ui/react-toast',
           ],
-          // Group pages by role
           'auth-pages': [
             '@/components/auth/Login',
             '@/components/auth/Register',
@@ -75,7 +73,7 @@ export default defineConfig({
       },
     },
     chunkSizeWarningLimit: 500,
-    minify: 'terser', // Use terser for aggressive minification
-    sourcemap: false, // Disable for smaller build
+    minify: 'terser',
+    sourcemap: false,
   },
 });
