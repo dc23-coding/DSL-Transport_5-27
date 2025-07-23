@@ -6,37 +6,45 @@ import HomeRouter from '@/components/auth/HomeRouter';
 import GlobalNavbar from '@/components/layout/GlobalNavbar';
 import UnauthorizedPage from '@/components/pages/UnauthorizedPage';
 
-// Lazy-loaded components
+// Public routes (lazy-loaded)
 const Login = lazy(() => import('@/components/auth/Login'));
 const Register = lazy(() => import('@/components/auth/Register'));
-const Dashboard = lazy(() => import('@/components/pages/Dashboard'));
+
+// Admin routes
 const AdminDashboard = lazy(() => import('@/components/pages/AdminDashboard'));
-const BrokerDashboard = lazy(() => import('@/components/pages/BrokerDashboard'));
-const DriverDashboard = lazy(() => import('@/components/pages/DriverDashboard'));
+const Dashboard = lazy(() => import('@/components/pages/Dashboard'));
 const VehicleManagementPage = lazy(() => import('@/components/pages/VehicleManagementPage'));
 const MaintenancePage = lazy(() => import('@/components/pages/MaintenancePage'));
-const UserProfilePage = lazy(() => import('@/components/pages/UserProfilePage'));
 const FullPayrollPage = lazy(() => import('@/components/pages/FullPayrollPage'));
-const RouteCalculatorPage = lazy(() => import('@/components/pages/RouteCalculatorPage'));
+
+// Broker routes
+const BrokerDashboard = lazy(() => import('@/components/pages/BrokerDashboard'));
 const DriversAvailablePage = lazy(() => import('@/components/pages/DriversAvailablePage'));
 const LoadsPage = lazy(() => import('@/components/pages/LoadsPage'));
 const BrokerPayrollPage = lazy(() => import('@/components/pages/BrokerPayrollPage'));
 const ShipmentsPage = lazy(() => import('@/components/pages/ShipmentsPage'));
 const BrokerProfilePage = lazy(() => import('@/components/pages/BrokerProfilePage'));
 
+// Driver routes
+const DriverDashboard = lazy(() => import('@/components/pages/DriverDashboard'));
+
+// Shared routes
+const UserProfilePage = lazy(() => import('@/components/pages/UserProfilePage'));
+const RouteCalculatorPage = lazy(() => import('@/components/pages/RouteCalculatorPage'));
+
 function App() {
   return (
     <AuthProvider>
       <Router>
         <GlobalNavbar />
-        <Suspense fallback={<div className="p-4">Loading...</div>}>
+        <Suspense fallback={<div className="p-4 text-center">Loading...</div>}>
           <Routes>
-            {/* Public routes */}
+            {/* Public Routes */}
             <Route path="/login" element={<Login />} />
             <Route path="/register" element={<Register />} />
             <Route path="/unauthorized" element={<UnauthorizedPage />} />
 
-            {/* Role-based redirect */}
+            {/* Root Route with Role-Based Redirect */}
             <Route
               path="/"
               element={
@@ -46,7 +54,7 @@ function App() {
               }
             />
 
-            {/* Admin-only routes */}
+            {/* Admin Routes */}
             <Route
               path="/admin-dashboard"
               element={
@@ -88,7 +96,7 @@ function App() {
               }
             />
 
-            {/* Broker-only routes */}
+            {/* Broker Routes */}
             <Route
               path="/broker-dashboard"
               element={
@@ -138,7 +146,7 @@ function App() {
               }
             />
 
-            {/* Driver-only */}
+            {/* Driver Routes */}
             <Route
               path="/driver-dashboard"
               element={
@@ -148,7 +156,7 @@ function App() {
               }
             />
 
-            {/* Shared (all authenticated) */}
+            {/* Shared Routes (Authenticated Users) */}
             <Route
               path="/profile"
               element={
@@ -166,7 +174,7 @@ function App() {
               }
             />
 
-            {/* Fallback */}
+            {/* Fallback Route */}
             <Route
               path="*"
               element={

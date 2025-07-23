@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { LogOutIcon as LogOut, MenuIcon as Menu, XIcon as X } from 'lucide-react';
+import LogOutIcon from 'lucide-react/dist/esm/icons/log-out';
+import MenuIcon from 'lucide-react/dist/esm/icons/menu';
+import XIcon from 'lucide-react/dist/esm/icons/x';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/lib/supabase';
 
@@ -43,8 +45,6 @@ const GlobalNavbar = () => {
     { to: '/register', label: 'Register' },
   ];
 
-  console.debug('[GlobalNavbar] user:', user?.email, 'userRole:', userRole, 'navLinks:', navLinks);
-
   return (
     <nav className="w-full bg-background border-b border-border p-4 flex justify-between items-center shadow-sm">
       <div className="flex items-center gap-4">
@@ -68,7 +68,7 @@ const GlobalNavbar = () => {
             onClick={handleLogout}
             className="hidden md:flex items-center gap-1 text-sm hover:underline"
           >
-            <LogOut className="h-4 w-4" />
+            <LogOutIcon className="h-4 w-4" />
             Logout
           </button>
         )}
@@ -79,7 +79,7 @@ const GlobalNavbar = () => {
             aria-controls="mobile-menu"
             className="flex items-center text-sm"
           >
-            {isDropdownOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            {isDropdownOpen ? <XIcon className="h-5 w-5" /> : <MenuIcon className="h-5 w-5" />}
           </button>
           {isDropdownOpen && (
             <div
@@ -102,7 +102,7 @@ const GlobalNavbar = () => {
                     onClick={handleLogout}
                     className="flex items-center gap-1 py-2 px-4 text-sm hover:bg-accent hover:underline text-left"
                   >
-                    <LogOut className="h-4 w-4" />
+                    <LogOutIcon className="h-4 w-4" />
                     Logout
                   </button>
                 )}

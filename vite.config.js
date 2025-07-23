@@ -1,38 +1,81 @@
 // vite.config.js
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { visualizer } from 'rollup-plugin-visualizer';
 import path from 'path';
 
 export default defineConfig({
-  base: '/',
   plugins: [
-    react({
-      jsxRuntime: 'automatic',
+    react(),
+    visualizer({
+      open: true,
+      filename: 'dist/stats.html',
+      gzipSize: true,
     }),
   ],
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, './src'), // Map @/ to src/
+    },
+  },
   build: {
-    outDir: 'dist',
-    emptyOutDir: true,
-    sourcemap: true,
     rollupOptions: {
       output: {
-        manualChunks(id) {
-          if (id.includes('node_modules/react') || id.includes('node_modules/react-dom')) {
-            return 'vendor-react';
-          }
-          if (id.includes('node_modules')) {
-            return 'vendor';
-          }
+        manualChunks: {
+          // Vendor dependencies
+          'vendor-supabase': ['@supabase/supabase-js'],
+          'vendor-lucide': ['lucide-react'],
+          'vendor-react-router': ['react-router-dom'],
+          'vendor-react': ['react', 'react-dom'],
+          'vendor-recharts': ['recharts'],
+          'vendor-framer-motion': ['framer-motion'],
+          'vendor-jspdf': ['jspdf', 'jspdf-autotable'],
+          'vendor-radix': [
+            '@radix-ui/react-alert-dialog',
+            '@radix-ui/react-avatar',
+            '@radix-ui/react-checkbox',
+            '@radix-ui/react-dialog',
+            '@radix-ui/react-dropdown-menu',
+            '@radix-ui/react-label',
+            '@radix-ui/react-slider',
+            '@radix-ui/react-slot',
+            '@radix-ui/react-tabs',
+            '@radix-ui/react-toast',
+          ],
+          // Group pages by role
+          'auth-pages': [
+            '@/components/auth/Login',
+            '@/components/auth/Register',
+            '@/components/auth/HomeRouter',
+            '@/components/auth/ProtectedRoute',
+          ],
+          'admin-pages': [
+            '@/components/pages/AdminDashboard',
+            '@/components/pages/Dashboard',
+            '@/components/pages/VehicleManagementPage',
+            '@/components/pages/MaintenancePage',
+            '@/components/pages/FullPayrollPage',
+          ],
+          'broker-pages': [
+            '@/components/pages/BrokerDashboard',
+            '@/components/pages/DriversAvailablePage',
+            '@/components/pages/LoadsPage',
+            '@/components/pages/BrokerPayrollPage',
+            '@/components/pages/ShipmentsPage',
+            '@/components/pages/BrokerProfilePage',
+          ],
+          'driver-pages': ['@/components/pages/DriverDashboard'],
+          'shared-pages': [
+            '@/components/pages/UserProfilePage',
+            '@/components/pages/RouteCalculatorPage',
+            '@/components/pages/UnauthorizedPage',
+          ],
+          'layout': ['@/components/layout/GlobalNavbar'],
         },
       },
     },
-  },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, './src'),
-      react: path.resolve(__dirname, './node_modules/react'),
-      'react-dom': path.resolve(__dirname, './node_modules/react-dom'),
-      'lucide-react': path.resolve(__dirname, './node_modules/lucide-react'),
-    },
+    chunkSizeWarningLimit: 500,
+    minify: 'terser', // Use terser for aggressive minification
+    sourcemap: false, // Disable for smaller build
   },
 });
