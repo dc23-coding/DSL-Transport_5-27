@@ -1,123 +1,156 @@
-import React, { useCallback, useMemo } from 'react';
-import { useNavigate, NavLink, useLocation } from 'react-router-dom';
-import { ArrowLeft, ArrowRight, MapPin } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Home, Truck, Compass, DollarSign, User, Settings, Users } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { cn } from '@/lib/utils';
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { useToast } from '@/components/ui/use-toast';
 
-// Route constants
-const ROUTES = {
-  DASHBOARD: '/',
-  DRIVER_DASHBOARD: '/driver-dashboard',
-  BROKER_DASHBOARD: '/broker-dashboard',
-  PAYROLL: '/payroll',
-  VEHICLES: '/vehicles',
-  MAINTENANCE: '/maintenance',
-  DRIVER_MANAGEMENT: '/driver-management',
-  TRIP_PLANNER: '/route-calculator',
-  PROFILE: '/profile',
-};
+const AuthContext = createContext();
+const VALID_ROLES = new Set(['admin', 'driver', 'broker']);
 
-const GlobalNavControls = () => {
-  // All hooks at the top, unconditionally
-  const navigate = useNavigate();
-  const location = useLocation();
-  const { user, userRole } = useAuth();
+export const useAuth = () => useContext(AuthContext);
 
-  const commonLinks = [
-    { to: ROUTES.TRIP_PLANNER, label: 'Trip Planner', icon: Compass },
-    { to: ROUTES.PROFILE, label: 'Profile', icon: User },
-  ];
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [userRole, setUserRole] = useState(null);
+  const [adminMode, setAdminMode] = useState(false);
+  const [devBypass, setDevBypass] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const { toast } = useToast();
 
-  const roleLinks = {
-    admin: [
-      { to: ROUTES.DASHBOARD, label: 'Dashboard', icon: Home },
-      { to: ROUTES.PAYROLL, label: 'Payroll', icon: DollarSign },
-      { to: ROUTES.VEHICLES, label: 'Vehicles', icon: Truck },
-      { to: ROUTES.MAINTENANCE, label: 'Maintenance', icon: Settings },
-      { to: ROUTES.DRIVER_MANAGEMENT, label: 'Drivers', icon: Users },
-    ],
-    driver: [
-      { to: ROUTES.DRIVER_DASHBOARD, label: 'My Loads', icon: Truck },
-    ],
-    broker: [
-      { to: ROUTES.BROKER_DASHBOARD, label: 'My Shipments', icon: Truck },
-    ],
+  useEffect(() => {
+    const updateUser = (session) => {
+      const user = session?.user ?? null;
+      setUser(user);
+      const role = devBypass ? 'admin' : (user?.app_metadata?.role || user?.user_metadata?.role);
+      console.log('🧠 Session User:', user?.email);
+      console.log('🧠 App Metadata:', user?.app_metadata);
+      console.log('🧠 User Metadata:', user?.user_metadata);
+      console.log('🧠 Dev Bypass:', devBypass);
+      console.log('🧠 Extracted Role:', role);
+      if (role && !VALID_ROLES.has(role)) {
+        console.error('Invalid role detected:', role);
+        setUserRole(null);
+      } else {
+        setUserRole(role ?? null);
+      }
+    };
+
+    supabase.auth.onAuthStateChange((_event, session) => {
+      console.log('🧠 Auth State Changed:', _event);
+      updateUser(session);
+    });
+
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) console.error('🧠 Get Session Error:', error);
+      console.log('🧠 Initial Session:', session?.user?.email);
+      updateUser(session);
+      setLoading(false);
+    });
+  }, [devBypass]);
+
+  const activateBypass = () => {
+    setDevBypass(true);
+    setUserRole('admin');
+    console.log('🧠 Dev Bypass Activated');
   };
 
-  // Memoize links array
-  const links = useMemo(() => [
-    ...(roleLinks[userRole] || []),
-    ...commonLinks,
-  ], [userRole]);
+  const login = async (email, password) => {
+    setLoading(true);
+    const { data, error } = await supabase.auth.signInWithPassword({ email, password });
+    setLoading(false);
+    if (error) {
+      toast({ title: 'Login Failed', description: error.message, variant: 'destructive' });
+      console.error('🧠 Login Error:', error);
+      return { error };
+    }
+    console.log('🧠 Login Success:', data.user.email);
+    return { user: data?.user };
+  };
 
-  // Memoize navigation handlers
-  const handleBack = useCallback(() => {
-    if (window.history.length > 1) navigate(-1);
-  }, [navigate]);
+  const register = async (email, password, role, fullName) => {
+    setLoading(true);
+    if (!VALID_ROLES.has(role)) {
+      setLoading(false);
+      console.error('🧠 Invalid Role during Registration:', role);
+      throw new Error(`Invalid role: ${role}`);
+    }
+    console.log('🧠 Registering with:', { email, role, fullName });
+    const { data, error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { full_name: fullName || email.split('@')[0] }
+      }
+    });
+    if (error) {
+      toast({ title: "Registration Failed", description: error.message, variant: "destructive" });
+      console.error('🧠 Registration Error:', error);
+      setLoading(false);
+      return { error };
+    }
+    const user = data.user;
+    console.log('🧠 Registered User:', user?.email);
+    console.log('🧠 Registered User App Metadata:', user?.app_metadata);
+    if (!user) {
+      toast({ title: "Verify Email", description: "Check your inbox to complete registration." });
+      setLoading(false);
+      return {};
+    }
+    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(user.id, {
+      app_metadata: { role }
+    });
+    if (updateError) {
+      toast({ title: "Role Assignment Failed", description: updateError.message, variant: "destructive" });
+      console.error('🧠 Update App Metadata Error:', updateError);
+      setLoading(false);
+      return { error: updateError };
+    }
+    console.log('🧠 Updated App Metadata:', { role });
+    const baseData = { id: user.id, email, name: fullName || email.split('@')[0] };
+    try {
+      if (role === 'admin') {
+        const { error } = await supabase.from('admins').insert(baseData);
+        if (error) console.error('🧠 Admin Table Insertion Error:', error);
+      } else if (role === 'driver') {
+        const { error } = await supabase.from('drivers').insert({ ...baseData, status: 'active' });
+        if (error) console.error('🧠 Driver Table Insertion Error:', error);
+      } else if (role === 'broker') {
+        const { error } = await supabase.from('brokers').insert(baseData);
+        if (error) console.error('🧠 Broker Table Insertion Error:', error);
+      }
+    } catch (err) {
+      console.error('🧠 Table Insertion Error:', err);
+    }
+    toast({ title: "Registration Successful", description: "Please check your email to verify your account." });
+    setLoading(false);
+    return { user };
+  };
 
-  const handleForward = useCallback(() => {
-    navigate(1);
-  }, [navigate]);
-
-  const openRouteCalculator = useCallback(() => {
-    navigate(ROUTES.TRIP_PLANNER);
-  }, [navigate]);
-
-  // Early return after all hooks
-  if (!user || ['/login', '/register'].includes(location.pathname)) {
-    return null;
-  }
+  const logout = async () => {
+    await supabase.auth.signOut();
+    setUser(null);
+    setUserRole(null);
+    setAdminMode(false);
+    setDevBypass(false);
+    console.log('🧠 Logged Out');
+  };
 
   return (
-    <>
-      <div className="fixed bottom-16 left-1/2 transform -translate-x-1/2 flex gap-2 z-50 md:bottom-20">
-        <Button
-          onClick={handleBack}
-          variant="outline"
-          size="sm"
-          className="rounded-full hover:bg-muted transition-colors"
-        >
-          <ArrowLeft className="h-4 w-4" />
-        </Button>
-        <Button
-          onClick={openRouteCalculator}
-          variant="default"
-          size="sm"
-          className="rounded-full hover:bg-primary/90 transition-colors"
-        >
-          <MapPin className="h-4 w-4" />
-        </Button>
-        <Button
-          onClick={handleForward}
-          variant="outline"
-          size="sm"
-          className="rounded-full hover:bg-muted transition-colors"
-        >
-          <ArrowRight className="h-4 w-4" />
-        </Button>
-      </div>
-      <nav className="fixed bottom-0 left-0 right-0 bg-surface-dark border-t border-border z-50 pb-safe">
-        <div className="flex justify-around py-3">
-          {links.map(({ to, label, icon: Icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              className={({ isActive }) =>
-                cn(
-                  'flex flex-col items-center text-xs transition-colors duration-200',
-                  isActive ? 'text-primary' : 'text-foreground hover:text-primary/80'
-                )
-              }
-            >
-              <Icon className="w-6 h-6 mb-1" />
-              <span className="truncate max-w-[80px]">{label}</span>
-            </NavLink>
-          ))}
-        </div>
-      </nav>
-    </>
+    <AuthContext.Provider value={{
+      user,
+      userRole,
+      loading,
+      login,
+      register,
+      logout,
+      adminMode,
+      setAdminMode,
+      devBypass,
+      activateBypass,
+      isAdmin: userRole === 'admin',
+      isDriver: userRole === 'driver',
+      isBroker: userRole === 'broker'
+    }}>
+      {children}
+    </AuthContext.Provider>
   );
 };
 

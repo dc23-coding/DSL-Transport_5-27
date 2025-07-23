@@ -1,13 +1,12 @@
-// src/App.jsx
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@/contexts/AuthContext';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import HomeRouter from '@/components/auth/HomeRouter';
-import GlobalNavControls from '@/components/GlobalNavControls';
+import GlobalNavbar from '@/components/layout/GlobalNavbar';
 import UnauthorizedPage from '@/components/pages/UnauthorizedPage';
 
-// Lazy-loaded components for code-splitting
+// Lazy-loaded components
 const Login = lazy(() => import('@/components/auth/Login'));
 const Register = lazy(() => import('@/components/auth/Register'));
 const Dashboard = lazy(() => import('@/components/pages/Dashboard'));
@@ -19,12 +18,17 @@ const MaintenancePage = lazy(() => import('@/components/pages/MaintenancePage'))
 const UserProfilePage = lazy(() => import('@/components/pages/UserProfilePage'));
 const FullPayrollPage = lazy(() => import('@/components/pages/FullPayrollPage'));
 const RouteCalculatorPage = lazy(() => import('@/components/pages/RouteCalculatorPage'));
+const DriversAvailablePage = lazy(() => import('@/components/pages/DriversAvailablePage'));
+const LoadsPage = lazy(() => import('@/components/pages/LoadsPage'));
+const BrokerPayrollPage = lazy(() => import('@/components/pages/BrokerPayrollPage'));
+const ShipmentsPage = lazy(() => import('@/components/pages/ShipmentsPage'));
+const BrokerProfilePage = lazy(() => import('@/components/pages/BrokerProfilePage'));
 
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <GlobalNavControls />
+        <GlobalNavbar />
         <Suspense fallback={<div className="p-4">Loading...</div>}>
           <Routes>
             {/* Public routes */}
@@ -51,7 +55,6 @@ function App() {
                 </ProtectedRoute>
               }
             />
-            
             <Route
               path="/dashboard"
               element={
@@ -85,12 +88,52 @@ function App() {
               }
             />
 
-            {/* Broker-only */}
+            {/* Broker-only routes */}
             <Route
               path="/broker-dashboard"
               element={
                 <ProtectedRoute allowedRoles={['broker']}>
                   <BrokerDashboard />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/drivers-available"
+              element={
+                <ProtectedRoute allowedRoles={['broker']}>
+                  <DriversAvailablePage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/loads"
+              element={
+                <ProtectedRoute allowedRoles={['broker']}>
+                  <LoadsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/broker-payroll"
+              element={
+                <ProtectedRoute allowedRoles={['broker']}>
+                  <BrokerPayrollPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/shipments"
+              element={
+                <ProtectedRoute allowedRoles={['broker']}>
+                  <ShipmentsPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/broker-profile"
+              element={
+                <ProtectedRoute allowedRoles={['broker']}>
+                  <BrokerProfilePage />
                 </ProtectedRoute>
               }
             />

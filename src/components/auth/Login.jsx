@@ -39,7 +39,7 @@ const Login = () => {
             {loading ? 'Logging in...' : 'Login'}
           </Button>
         </form>
-        <Button variant="outline" className="w-full mt-2" onClick={handleDevBypass}>🚧 Dev Bypass</Button>
+        <Button variant="outline" className="w-full mt-2" onClick={handleDevBypass}>🚧 Admin Bypass</Button>
         <div className="text-center mt-4">
           <span>Don't have an account? </span>
           <button className="text-primary underline" onClick={() => navigate('/register')}>Register</button>
