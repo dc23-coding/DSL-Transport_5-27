@@ -6,7 +6,9 @@ import path from 'path';
 
 export default defineConfig({
   plugins: [
-    react(),
+    react({
+      jsxRuntime: 'automatic',
+    }),
     visualizer({
       open: true,
       filename: 'dist/stats.html',
@@ -15,8 +17,9 @@ export default defineConfig({
   ],
   resolve: {
     alias: {
-      '@': path.resolve(__dirname, './src'), // Ensure @/ maps to src/
+      '@': path.resolve(__dirname, './src'),
     },
+    dedupe: ['react', 'react-dom'],
   },
   build: {
     rollupOptions: {
@@ -25,7 +28,7 @@ export default defineConfig({
           'vendor-supabase': ['@supabase/supabase-js'],
           'vendor-lucide': ['lucide-react'],
           'vendor-react-router': ['react-router-dom'],
-          'vendor-react': ['react', 'react-dom'], // Ensure React is bundled
+          'vendor-react': ['react', 'react-dom'],
           'vendor-recharts': ['recharts'],
           'vendor-framer-motion': ['framer-motion'],
           'vendor-jspdf': ['jspdf', 'jspdf-autotable', 'html2canvas'],
@@ -69,6 +72,7 @@ export default defineConfig({
             '@/components/pages/UnauthorizedPage',
           ],
           'layout': ['@/components/layout/GlobalNavbar'],
+          'context': ['@/contexts/AuthContext'],
         },
       },
     },
