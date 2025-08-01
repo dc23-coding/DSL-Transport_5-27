@@ -1,17 +1,15 @@
 import React, { useState, useEffect, useCallback, lazy, Suspense } from 'react';
-import DownloadIcon from 'lucide-react/dist/esm/icons/download';
-import SearchIcon from 'lucide-react/dist/esm/icons/search';
-import CalendarIcon from 'lucide-react/dist/esm/icons/calendar';
-import EditIcon from 'lucide-react/dist/esm/icons/edit';
+import { DownloadIcon, SearchIcon, CalendarIcon, EditIcon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/components/ui/use-toast';
 import Pagination from '@/components/ui/pagination';
-import PayrollForm from '@/components/forms/PayrollForm';
 
-// Lazy-load heavy dependencies
+// Lazy-load heavy dependencies and components
 const jsPDF = lazy(() => import('jspdf'));
 const autoTable = lazy(() => import('jspdf-autotable'));
+const html2canvas = lazy(() => import('html2canvas'));
+const PayrollForm = lazy(() => import('@/components/forms/PayrollForm'));
 
 const FullPayrollPage = () => {
   const [payrollData, setPayrollData] = useState([]);
@@ -124,22 +122,39 @@ const FullPayrollPage = () => {
 
   const exportToPDF = async () => {
     try {
-      const doc = new jsPDF();
-      doc.text('Payroll Report', 14, 16);
-      doc.autoTable({
-        startY: 20,
-        head: [['Driver', 'Period', 'Amount ($)', 'Status', 'Payment Date']],
-        body: payrollData.map((p) => [
-          p.drivers?.full_name || 'N/A',
-          `${new Date(p.period_start).toLocaleDateString()} - ${new Date(
-            p.period_end
-          ).toLocaleDateString()}`,
-          Number(p.amount).toFixed(2),
-          p.status,
-          new Date(p.payment_date).toLocaleDateString(),
-        ]),
-      });
-      doc.save('payroll-report.pdf');
+      const doc = new (await jsPDF)();
+      const autoTableModule = await autoTable;
+      const html2canvasModule = await html2canvas;
+
+      // Capture table as image for PDF
+      const tableElement = document.querySelector('table');
+      if (tableElement) {
+        const canvas = await html2canvasModule(tableElement);
+        const imgData = canvas.toDataURL('image/png');
+
+        doc.text('Payroll Report', 14, 16);
+        doc.addImage(imgData, 'PNG', 14, 20, 180, 0); // Adjust dimensions as needed
+        autoTableModule(doc, {
+          startY: canvas.height / 10 + 20, // Adjust based on image height
+          head: [['Driver', 'Period', 'Amount ($)', 'Status', 'Payment Date']],
+          body: payrollData.map((p) => [
+            p.drivers?.full_name || 'N/A',
+            `${new Date(p.period_start).toLocaleDateString()} - ${new Date(
+              p.period_end
+            ).toLocaleDateString()}`,
+            Number(p.amount).toFixed(2),
+            p.status,
+            new Date(p.payment_date).toLocaleDateString(),
+          ]),
+        });
+        doc.save('payroll-report.pdf');
+      } else {
+        toast({
+          title: 'Error generating PDF',
+          description: 'Table element not found',
+          variant: 'destructive',
+        });
+      }
     } catch (e) {
       toast({
         title: 'Error generating PDF',
@@ -339,14 +354,16 @@ const FullPayrollPage = () => {
       </div>
 
       {showPayrollForm && (
-        <PayrollForm
-          onClose={() => {
-            setShowPayrollForm(false);
-            setEditingPayment(null);
-          }}
-          onSuccess={handleFormSuccess}
-          payment={editingPayment}
-        />
+        <Suspense fallback={<div>Loading form...</div>}>
+          <PayrollForm
+            onClose={() => {
+              setShowPayrollForm(false);
+              setEditingPayment(null);
+            }}
+            onSuccess={handleFormSuccess}
+            payment={editingPayment}
+          />
+        </Suspense>
       )}
     </div>
   );

@@ -1,4 +1,3 @@
-// vite.config.js
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
@@ -19,7 +18,6 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
     },
-    dedupe: ['react', 'react-dom'],
   },
   build: {
     rollupOptions: {
@@ -31,7 +29,8 @@ export default defineConfig({
           'vendor-react': ['react', 'react-dom'],
           'vendor-recharts': ['recharts'],
           'vendor-framer-motion': ['framer-motion'],
-          'vendor-jspdf': ['jspdf', 'jspdf-autotable', 'html2canvas'],
+          'vendor-jspdf': ['jspdf', 'jspdf-autotable'],
+          'vendor-html2canvas': ['html2canvas'],
           'vendor-radix': [
             '@radix-ui/react-alert-dialog',
             '@radix-ui/react-avatar',
@@ -50,21 +49,15 @@ export default defineConfig({
             '@/components/auth/HomeRouter',
             '@/components/auth/ProtectedRoute',
           ],
-          'admin-pages': [
-            '@/components/pages/AdminDashboard',
-            '@/components/pages/Dashboard',
-            '@/components/pages/VehicleManagementPage',
-            '@/components/pages/MaintenancePage',
-            '@/components/pages/FullPayrollPage',
-          ],
-          'broker-pages': [
-            '@/components/pages/BrokerDashboard',
-            '@/components/pages/DriversAvailablePage',
-            '@/components/pages/LoadsPage',
-            '@/components/pages/BrokerPayrollPage',
-            '@/components/pages/ShipmentsPage',
-            '@/components/pages/BrokerProfilePage',
-          ],
+          'admin-dashboard': ['@/components/pages/AdminDashboard', '@/components/pages/Dashboard'],
+          'admin-vehicle': ['@/components/pages/VehicleManagementPage'],
+          'admin-maintenance': ['@/components/pages/MaintenancePage'],
+          'admin-payroll': ['@/components/pages/FullPayrollPage'],
+          'broker-dashboard': ['@/components/pages/BrokerDashboard'],
+          'broker-drivers-loads': ['@/components/pages/DriversAvailablePage', '@/components/pages/LoadsPage'],
+          'broker-payroll': ['@/components/pages/BrokerPayrollPage'],
+          'broker-shipments': ['@/components/pages/ShipmentsPage'],
+          'broker-profile': ['@/components/pages/BrokerProfilePage'],
           'driver-pages': ['@/components/pages/DriverDashboard'],
           'shared-pages': [
             '@/components/pages/UserProfilePage',
@@ -76,7 +69,7 @@ export default defineConfig({
         },
       },
     },
-    chunkSizeWarningLimit: 500,
+    chunkSizeWarningLimit: 600, // Temporary increase
     minify: 'terser',
     sourcemap: false,
   },
