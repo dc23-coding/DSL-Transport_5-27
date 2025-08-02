@@ -72,6 +72,5 @@ export default defineConfig({
     chunkSizeWarningLimit: 600, // Temporary increase
     minify: 'terser',
     sourcemap: false,
-    cssCodeSplit: true,
   },
 });
