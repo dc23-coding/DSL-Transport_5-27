@@ -2,6 +2,8 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { visualizer } from 'rollup-plugin-visualizer';
 import path from 'path';
+import tailwindcss from 'tailwindcss';
+import autoprefixer from 'autoprefixer';
 
 export default defineConfig({
   plugins: [
@@ -19,53 +21,92 @@ export default defineConfig({
       '@': path.resolve(__dirname, './src'),
     },
   },
+  css: {
+    postcss: {
+      plugins: [
+        tailwindcss(),
+        autoprefixer(),
+      ],
+    },
+  },
   build: {
+    cssCodeSplit: true, // Ensure CSS is bundled separately
     rollupOptions: {
       output: {
-        manualChunks: {
-          'vendor-supabase': ['@supabase/supabase-js'],
-          'vendor-lucide': ['lucide-react'],
-          'vendor-react-router': ['react-router-dom'],
-          'vendor-react': ['react', 'react-dom'],
-          'vendor-recharts': ['recharts'],
-          'vendor-framer-motion': ['framer-motion'],
-          'vendor-jspdf': ['jspdf', 'jspdf-autotable'],
-          'vendor-html2canvas': ['html2canvas'],
-          'vendor-radix': [
-            '@radix-ui/react-alert-dialog',
-            '@radix-ui/react-avatar',
-            '@radix-ui/react-checkbox',
-            '@radix-ui/react-dialog',
-            '@radix-ui/react-dropdown-menu',
-            '@radix-ui/react-label',
-            '@radix-ui/react-slider',
-            '@radix-ui/react-slot',
-            '@radix-ui/react-tabs',
-            '@radix-ui/react-toast',
-          ],
-          'auth-pages': [
-            '@/components/auth/Login',
-            '@/components/auth/Register',
-            '@/components/auth/HomeRouter',
-            '@/components/auth/ProtectedRoute',
-          ],
-          'admin-dashboard': ['@/components/pages/AdminDashboard', '@/components/pages/Dashboard'],
-          'admin-vehicle': ['@/components/pages/VehicleManagementPage'],
-          'admin-maintenance': ['@/components/pages/MaintenancePage'],
-          'admin-payroll': ['@/components/pages/FullPayrollPage'],
-          'broker-dashboard': ['@/components/pages/BrokerDashboard'],
-          'broker-drivers-loads': ['@/components/pages/DriversAvailablePage', '@/components/pages/LoadsPage'],
-          'broker-payroll': ['@/components/pages/BrokerPayrollPage'],
-          'broker-shipments': ['@/components/pages/ShipmentsPage'],
-          'broker-profile': ['@/components/pages/BrokerProfilePage'],
-          'driver-pages': ['@/components/pages/DriverDashboard'],
-          'shared-pages': [
-            '@/components/pages/UserProfilePage',
-            '@/components/pages/RouteCalculatorPage',
-            '@/components/pages/UnauthorizedPage',
-          ],
-          'layout': ['@/components/layout/GlobalNavbar'],
-          'context': ['@/contexts/AuthContext'],
+        manualChunks(id) {
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/')) {
+            return 'vendor-react';
+          }
+          if (id.includes('node_modules/@supabase/supabase-js')) {
+            return 'vendor-supabase';
+          }
+          if (id.includes('node_modules/lucide-react')) {
+            return 'vendor-lucide';
+          }
+          if (id.includes('node_modules/react-router-dom')) {
+            return 'vendor-react-router';
+          }
+          if (id.includes('node_modules/recharts')) {
+            return 'vendor-recharts';
+          }
+          if (id.includes('node_modules/framer-motion')) {
+            return 'vendor-framer-motion';
+          }
+          if (id.includes('node_modules/jspdf') || id.includes('node_modules/jspdf-autotable')) {
+            return 'vendor-jspdf';
+          }
+          if (id.includes('node_modules/html2canvas')) {
+            return 'vendor-html2canvas';
+          }
+          if (id.includes('node_modules/@radix-ui')) {
+            return 'vendor-radix';
+          }
+          if (id.includes('src/components/auth')) {
+            return 'auth-pages';
+          }
+          if (id.includes('src/components/pages/AdminDashboard') || id.includes('src/components/pages/Dashboard')) {
+            return 'admin-dashboard';
+          }
+          if (id.includes('src/components/pages/VehicleManagementPage')) {
+            return 'admin-vehicle';
+          }
+          if (id.includes('src/components/pages/MaintenancePage')) {
+            return 'admin-maintenance';
+          }
+          if (id.includes('src/components/pages/FullPayrollPage')) {
+            return 'admin-payroll';
+          }
+          if (id.includes('src/components/pages/BrokerDashboard')) {
+            return 'broker-dashboard';
+          }
+          if (id.includes('src/components/pages/DriversAvailablePage') || id.includes('src/components/pages/LoadsPage')) {
+            return 'broker-drivers-loads';
+          }
+          if (id.includes('src/components/pages/BrokerPayrollPage')) {
+            return 'broker-payroll';
+          }
+          if (id.includes('src/components/pages/ShipmentsPage')) {
+            return 'broker-shipments';
+          }
+          if (id.includes('src/components/pages/BrokerProfilePage')) {
+            return 'broker-profile';
+          }
+          if (id.includes('src/components/pages/DriverDashboard')) {
+            return 'driver-pages';
+          }
+          if (
+            id.includes('src/components/pages/UserProfilePage') ||
+            id.includes('src/components/pages/RouteCalculatorPage') ||
+            id.includes('src/components/pages/UnauthorizedPage')
+          ) {
+            return 'shared-pages';
+          }
+          if (id.includes('src/components/layout/GlobalNavbar')) {
+            return 'layout';
+          }
+          if (id.includes('src/contexts/AuthContext')) {
+            return 'context';
+          }
         },
       },
     },
