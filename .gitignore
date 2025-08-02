@@ -2,3 +2,4 @@ node_modules
 dist
 seed-admin.js
 .env
+.vercel
