@@ -6,6 +6,7 @@ import tailwindcss from 'tailwindcss'
 import autoprefixer from 'autoprefixer'
 
 // 🚀 Production-ready Vite config for React + Tailwind + Vercel static hosting
+// 🚀 Production-ready Vite config for React + Tailwind + Vercel static hosting
 export default defineConfig({
   plugins: [
     react({
@@ -35,6 +36,8 @@ export default defineConfig({
   },
 
   build: {
+    outDir: 'dist', // 👈 ensures consistent output for Vercel
+    emptyOutDir: true,
     cssCodeSplit: true,
     sourcemap: false,
     minify: 'terser',
@@ -42,6 +45,11 @@ export default defineConfig({
 
     rollupOptions: {
       output: {
+        // 🧱 Add these 3 lines before manualChunks()
+        entryFileNames: 'assets/[name]-[hash].js',
+        chunkFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]',
+
         manualChunks(id) {
           // ---- Vendor chunks ----
           if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/'))
